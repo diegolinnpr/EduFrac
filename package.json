@@ -4,6 +4,7 @@
   "description": "A website that helps you visualize different fractals, paticularly chaos game.",
   "main": "index.js",
   "scripts": {
+    "start": "http-server src -p 8080 -o",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -23,5 +24,9 @@
     "htmlhint": "^1.8.0",
     "stylelint": "^17.0.0",
     "stylelint-config-standard": "^40.0.0"
+  },
+  "dependencies": {
+    "http-server": "^14.1.1",
+    "three": "^0.182.0"
   }
 }
