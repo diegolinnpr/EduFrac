@@ -1,4 +1,4 @@
-import * as THREE from "https://unpkg.com/three@0.182.0/build/three.module.js";
+/*import * as THREE from "https://unpkg.com/three@0.182.0/build/three.module.js";
 
 const scene = new THREE.Scene();
 
@@ -32,3 +32,4 @@ function animate() {
 }
 
 animate();
+*/
