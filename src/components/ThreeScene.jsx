@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
-export default function ThreeScene() {
+function ThreeScene() {
   const mountRef = useRef(null);
 
   useEffect(() => {
@@ -13,7 +14,7 @@ export default function ThreeScene() {
       0.1,
       1000
     );
-    camera.position.z = 5;
+    camera.position.set(0, 0, 5);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(
@@ -23,28 +24,72 @@ export default function ThreeScene() {
 
     mountRef.current.appendChild(renderer.domElement);
 
-    // Cube
-    const geometry = new THREE.BoxGeometry();
-    const material = new THREE.MeshStandardMaterial({ color: 0x44aa88 });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
+    // 👇 Add OrbitControls
+    const controls = new OrbitControls(camera, renderer.domElement);
+
+    // Smooth movement
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    // Optional: limit zoom
+    controls.minDistance = 1;
+    controls.maxDistance = 20;
+
+    // Load chaos game binary
+    fetch("/data/octahedron.bin")
+      .then(res => res.arrayBuffer())
+      .then(buffer => {
+        const positions = new Float32Array(buffer);
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute(
+          "position",
+          new THREE.BufferAttribute(positions, 3)
+        );
+
+        const material = new THREE.PointsMaterial({
+          size: 0.01,
+          color: 0x66ccff,
+          transparent: true,
+          opacity: 0.02,
+          depthWrite: false
+        });
+
+        const points = new THREE.Points(geometry, material);
+        scene.add(points);
+      })
+      .catch(err => console.error("Failed to load:", err));
 
     // Light
     const light = new THREE.DirectionalLight(0xffffff, 1);
     light.position.set(5, 5, 5);
     scene.add(light);
 
+    let animationId;
+
     function animate() {
-      requestAnimationFrame(animate);
-      cube.rotation.y += 0.01;
+      animationId = requestAnimationFrame(animate);
+
+      // 👇 Required for smooth damping
+      controls.update();
+
       renderer.render(scene, camera);
     }
 
     animate();
 
-    // Cleanup when component unmounts
+    // Cleanup
     return () => {
-      mountRef.current.removeChild(renderer.domElement);
+      cancelAnimationFrame(animationId);
+      controls.dispose();
+
+      if (
+        mountRef.current &&
+        renderer.domElement.parentNode === mountRef.current
+      ) {
+        mountRef.current.removeChild(renderer.domElement);
+      }
+
       renderer.dispose();
     };
   }, []);
@@ -52,7 +97,9 @@ export default function ThreeScene() {
   return (
     <div
       ref={mountRef}
-      style={{ width: "100%", height: "500px" }}
+      style={{ width: "100%", height: "100%" }}
     />
   );
 }
+
+export default ThreeScene;

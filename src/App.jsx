@@ -1,11 +1,15 @@
 import ThreeScene from "./components/ThreeScene";
-import React from "react";
+import Controls from "./components/Controls";
+import React, { useState } from "react";
+import FractalCanvas from "./components/FractalCanvas";
 
 function App() {
+  const [fractalType, setFractalType] = useState("Octahedron");
+
   return (
-    <div>
-      <h1>My Three Scene</h1>
-      <ThreeScene />
+    <div style={{ display: "flex", height: "100vh" }}>
+      <FractalCanvas type={fractalType} />
+      <Controls setFractalType={setFractalType} />
     </div>
   );
 }

@@ -1,5 +1,3 @@
 node_modules
-generator/
-*.py
 src/functions.js
 public/data/octahedron.bin
