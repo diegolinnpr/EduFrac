@@ -7,8 +7,14 @@ function Controls({ setFractalType }) {
 
       <br /><br />
 
-      <button onClick={() => setFractalType("Square")}>
-        Square
+      <button onClick={() => setFractalType("Dodecahedron")}>
+        Dodecahedron
+      </button>
+
+      <br /><br />
+      
+      <button onClick={() => setFractalType("Tetrahedron")}>
+        Tetrahedron
       </button>
     </div>
   );

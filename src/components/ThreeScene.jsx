@@ -2,11 +2,19 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
-function ThreeScene() {
-  const mountRef = useRef(null);
+function ThreeScene({ type }) {
 
+  const mountRef = useRef(null);
+  const sceneRef = useRef(null);
+  const rendererRef = useRef(null);
+  const cameraRef = useRef(null);
+  const pointsRef = useRef(null);
+
+  // 🔹 1. Initialize Scene ONCE
   useEffect(() => {
+
     const scene = new THREE.Scene();
+    sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(
       75,
@@ -15,30 +23,72 @@ function ThreeScene() {
       1000
     );
     camera.position.set(0, 0, 5);
+    cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(
       mountRef.current.clientWidth,
       mountRef.current.clientHeight
     );
+    rendererRef.current = renderer;
 
     mountRef.current.appendChild(renderer.domElement);
 
-    // 👇 Add OrbitControls
     const controls = new OrbitControls(camera, renderer.domElement);
-
-    // Smooth movement
     controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
 
-    // Optional: limit zoom
-    controls.minDistance = 1;
-    controls.maxDistance = 20;
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(5, 5, 5);
+    scene.add(light);
 
-    // Load chaos game binary
-    fetch("/data/octahedron.bin")
+    let animationId;
+
+    function animate() {
+      animationId = requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    return () => {
+      cancelAnimationFrame(animationId);
+      controls.dispose();
+      renderer.dispose();
+    };
+
+  }, []);
+
+  // 🔹 2. Update Geometry When Type Changes
+  useEffect(() => {
+    if (!sceneRef.current) return;
+    updateGeometry(type);
+  }, [type]);
+
+  // 🔹 3. Geometry Update Function
+  function updateGeometry(type) {
+
+    // Remove old fractal
+    if (pointsRef.current) {
+      sceneRef.current.remove(pointsRef.current);
+      pointsRef.current.geometry.dispose();
+      pointsRef.current.material.dispose();
+      pointsRef.current = null;
+    }
+
+    const fractalFiles = {
+      Octahedron: "/data/octahedron.bin",
+      Dodecahedron: "/data/dodecahedron.bin",
+      Tetrahedron: "/data/tetrahedron.bin"
+    };
+
+    const filePath = fractalFiles[type];
+    if (!filePath) return;
+
+    fetch(filePath)
       .then(res => res.arrayBuffer())
       .then(buffer => {
+
         const positions = new Float32Array(buffer);
 
         const geometry = new THREE.BufferGeometry();
@@ -48,51 +98,20 @@ function ThreeScene() {
         );
 
         const material = new THREE.PointsMaterial({
-          size: 0.01,
+          size: 0.005,
           color: 0x66ccff,
           transparent: true,
-          opacity: 0.02,
+          opacity: 0.05,
           depthWrite: false
         });
 
         const points = new THREE.Points(geometry, material);
-        scene.add(points);
-      })
-      .catch(err => console.error("Failed to load:", err));
 
-    // Light
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(5, 5, 5);
-    scene.add(light);
+        sceneRef.current.add(points);
+        pointsRef.current = points;
 
-    let animationId;
-
-    function animate() {
-      animationId = requestAnimationFrame(animate);
-
-      // 👇 Required for smooth damping
-      controls.update();
-
-      renderer.render(scene, camera);
-    }
-
-    animate();
-
-    // Cleanup
-    return () => {
-      cancelAnimationFrame(animationId);
-      controls.dispose();
-
-      if (
-        mountRef.current &&
-        renderer.domElement.parentNode === mountRef.current
-      ) {
-        mountRef.current.removeChild(renderer.domElement);
-      }
-
-      renderer.dispose();
-    };
-  }, []);
+      });
+  }
 
   return (
     <div

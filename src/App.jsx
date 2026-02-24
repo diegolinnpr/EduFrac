@@ -9,6 +9,7 @@ function App() {
   return (
     <div style={{ display: "flex", height: "100vh" }}>
       <FractalCanvas type={fractalType} />
+      <ThreeScene type={fractalType} />
       <Controls setFractalType={setFractalType} />
     </div>
   );
